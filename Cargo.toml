@@ -1,0 +1,6 @@
+[package]
+name = "cmd_cache"
+version = "0.1.0"
+authors = ["cyp <cyplp@free.fr>"]
+
+[dependencies]
