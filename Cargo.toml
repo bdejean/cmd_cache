@@ -6,4 +6,5 @@ authors = ["cyp <cyplp@free.fr>"]
 [dependencies]
 
 rust-crypto = "*"
-tempfile = "*"
+
+tempdir = "*"

@@ -1,5 +1,6 @@
 extern crate crypto;
 extern crate tempfile;
+extern crate tempdir;
 
 use std::fmt;
 use std::env;
@@ -7,6 +8,8 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process;
+
+use tempdir::TempDir;
 
 use crypto::md5::Md5;
 use crypto::digest::Digest;
@@ -79,9 +82,10 @@ fn main() {
 
     let dir = check_or_create_dir();
 
-    let tmp = tempfile::NamedTempFile::new_in(dir.as_path()).unwrap();
-    let tmp_path = tmp.path().to_owned();
-    let file : std::fs::File = tmp.into();
+    let tmp_dir = TempDir::new_in(dir.as_path(), "workdir").unwrap();
+    let tmp_path = tmp_dir.path().join("work");
+    let file = std::fs::File::create(&tmp_path).unwrap();
+
     let stdout = std::process::Stdio::from(file);
 
     let cmd = &args[0];
@@ -95,9 +99,8 @@ fn main() {
         .expect(format!("failed to execute {:?}", args).as_ref());
 
     child.wait().expect(format!("failed to wait {:?}", args).as_ref());
-
-    let from = tmp_path;
+    
     let to = dir.join(md5);
-    std::fs::rename(&from, &to).expect(format!("renamed failed {:?} -> {:?}", &from, &to).as_ref());
+    std::fs::rename(&tmp_path, &to).expect(format!("renamed failed {:?} -> {:?}", &tmp_path, &to).as_ref());
 }
   
