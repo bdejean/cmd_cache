@@ -68,6 +68,18 @@ fn check_or_create_dir() -> PathBuf {
     }
 }
 
+fn check_file(file: &PathBuf) -> bool{
+    let ok = file.is_file();
+
+    if ! ok{ return ok;}
+    
+    let metadata = fs::metadata(file).unwrap();
+    let time = metadata.created();
+
+    println!("{:?}", time);
+    return ok;
+}
+
 fn main() {
     let mut args: Vec<String> = env::args().collect();
     args.remove(0);
@@ -84,7 +96,7 @@ fn main() {
 
     let cmd_file = dir.join(md5);
 
-    if cmd_file.is_file() {
+    if check_file(&cmd_file) {
         let mut stdin = std::fs::File::open(cmd_file).unwrap();
         let mut stdout = io::stdout();
         io::copy(&mut stdin, &mut stdout);
