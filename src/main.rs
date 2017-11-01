@@ -1,18 +1,22 @@
 extern crate crypto;
+extern crate tempfile;
 
+use std::fmt;
 use std::env;
 use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
+use std::process;
 
 use crypto::md5::Md5;
 use crypto::digest::Digest;
 
+
 const MAX_DAYS_DEFAULT : f32 = 7.0;
 
 
-fn concat_args(mut args : Vec<String>) -> String {
-    args.remove(0);
+fn concat_args(args : &Vec<String>) -> String {
+//    args.remove(0);
     let joined = args.join("@@join@@");
     return joined;
 }
@@ -62,9 +66,9 @@ fn check_or_create_dir() -> PathBuf {
 }
 
 fn main() {
-    let args: Vec<String> = env::args().collect();
-
-    let joined = concat_args(args);
+    let mut args: Vec<String> = env::args().collect();
+    args.remove(0);
+    let joined = concat_args(&args);
     println!("{}", joined);
 
     let md5 = hash(joined);
@@ -73,5 +77,27 @@ fn main() {
     let max_days = get_max_days();
     println!("{}", max_days);
 
-    check_or_create_dir();
+    let dir = check_or_create_dir();
+
+    let tmp = tempfile::NamedTempFile::new_in(dir.as_path()).unwrap();
+    let tmp_path = tmp.path().to_owned();
+    let file : std::fs::File = tmp.into();
+    let stdout = std::process::Stdio::from(file);
+
+    let cmd = &args[0];
+
+    let mut child = std::process::Command::new(cmd)
+        .args(&args[1..args.len()])
+        .stdin(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .stdout(stdout)
+        .spawn()
+        .expect(format!("failed to execute {:?}", args).as_ref());
+
+    child.wait().expect(format!("failed to wait {:?}", args).as_ref());
+
+    let from = tmp_path;
+    let to = dir.join(md5);
+    std::fs::rename(&from, &to).expect(format!("renamed failed {:?} -> {:?}", &from, &to).as_ref());
 }
+  
