@@ -3,7 +3,7 @@ extern crate crypto;
 use std::env;
 use std::fs;
 use std::path::Path;
-
+use std::path::PathBuf;
 
 use crypto::md5::Md5;
 use crypto::digest::Digest;
@@ -41,15 +41,18 @@ fn check_max_days(s: String) -> f32  {
 }
 
 
-fn check_or_create_dir() {
+fn check_or_create_dir() -> PathBuf {
     let home = env::var("HOME");
     if home.is_ok(){
         let dir = Path::new(&home.unwrap()).join(".cmd_cache");
         if !dir.is_dir() {
             match std::fs::create_dir(&dir) {
-                Ok(_) => return ,
+                Ok(_) => return dir,
                 Err(e) => panic!("can't create {:?} : {}", dir, e),
             }
+        }
+        else {
+            return dir;
         }
         
     }
