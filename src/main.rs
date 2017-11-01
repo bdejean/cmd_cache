@@ -1,5 +1,4 @@
 extern crate crypto;
-extern crate tempfile;
 extern crate tempdir;
 
 use std::fmt;
@@ -8,6 +7,7 @@ use std::fs;
 use std::path::Path;
 use std::path::PathBuf;
 use std::process;
+use std::io;
 
 use tempdir::TempDir;
 
@@ -82,25 +82,33 @@ fn main() {
 
     let dir = check_or_create_dir();
 
-    let tmp_dir = TempDir::new_in(dir.as_path(), "workdir").unwrap();
-    let tmp_path = tmp_dir.path().join("work");
-    let file = std::fs::File::create(&tmp_path).unwrap();
+    let cmd_file = dir.join(md5);
 
-    let stdout = std::process::Stdio::from(file);
+    if cmd_file.is_file() {
+        let mut stdin = std::fs::File::open(cmd_file).unwrap();
+        let mut stdout = io::stdout();
+        io::copy(&mut stdin, &mut stdout);
+    }
+    else {
+        let tmp_dir = TempDir::new_in(dir.as_path(), "workdir").unwrap();
+        let tmp_path = tmp_dir.path().join("work");
+        let file = std::fs::File::create(&tmp_path).unwrap();
 
-    let cmd = &args[0];
+        let stdout = std::process::Stdio::from(file);
 
-    let mut child = std::process::Command::new(cmd)
-        .args(&args[1..args.len()])
-        .stdin(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .stdout(stdout)
-        .spawn()
-        .expect(format!("failed to execute {:?}", args).as_ref());
+        let cmd = &args[0];
 
-    child.wait().expect(format!("failed to wait {:?}", args).as_ref());
+        let mut child = std::process::Command::new(cmd)
+            .args(&args[1..args.len()])
+            .stdin(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .stdout(stdout)
+            .spawn()
+            .expect(format!("failed to execute {:?}", args).as_ref());
+
+        child.wait().expect(format!("failed to wait {:?}", args).as_ref());
     
-    let to = dir.join(md5);
-    std::fs::rename(&tmp_path, &to).expect(format!("renamed failed {:?} -> {:?}", &tmp_path, &to).as_ref());
+        std::fs::rename(&tmp_path, &cmd_file).expect(format!("renamed failed {:?} -> {:?}", &tmp_path, &cmd_file).as_ref());
+    }
 }
   
