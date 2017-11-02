@@ -50,29 +50,21 @@ fn check_max_days(s: String) -> f32  {
 
 
 fn check_or_create_dir() -> PathBuf {
-    let home = env::var("HOME");
-    if home.is_ok(){
-        let dir = Path::new(&home.unwrap()).join(".cmd_cache");
-        if !dir.is_dir() {
-            match std::fs::create_dir(&dir) {
-                Ok(_) => return dir,
-                Err(e) => panic!("can't create {:?} : {}", dir, e),
-            }
-        }
-        else {
-            return dir;
-        }
-        
+    let home = env::var("HOME").expect("HOME not set!");
+
+    let dir = Path::new(&home).join(".cmd_cache");
+
+    if !dir.is_dir() {
+        std::fs::create_dir(&dir).expect(&format!("can't create {:?}", &dir));
     }
-    else {
-        panic!("HOME not set !");
-    }
+
+    return dir;
 }
 
 fn check_file(file: &PathBuf) -> bool{
     let ok = file.is_file();
 
-    if ! ok{ return ok;}
+    if ! ok { return false; }
     
     let metadata = fs::metadata(file).unwrap();
     let file_time = metadata.modified().unwrap();
