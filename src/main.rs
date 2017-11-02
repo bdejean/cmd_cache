@@ -8,6 +8,7 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 use std::io;
+use std::time::{Duration, SystemTime};
 
 use tempdir::TempDir;
 
@@ -74,10 +75,9 @@ fn check_file(file: &PathBuf) -> bool{
     if ! ok{ return ok;}
     
     let metadata = fs::metadata(file).unwrap();
-    let time = metadata.created();
-
-    println!("{:?}", time);
-    return ok;
+    let file_time = metadata.modified().unwrap();
+    let duration = Duration::from_secs((get_max_days() * 24.0 * 3600.0) as u64);
+    return file_time + duration > SystemTime::now();
 }
 
 fn main() {
@@ -97,6 +97,7 @@ fn main() {
     let cmd_file = dir.join(md5);
 
     if !check_file(&cmd_file) {
+        eprint!("# Really running {:?}\n", args);
         let tmp_dir = TempDir::new_in(dir.as_path(), "workdir").unwrap();
         let tmp_path = tmp_dir.path().join("work");
         let file = std::fs::File::create(&tmp_path).unwrap();
