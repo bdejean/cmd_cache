@@ -96,12 +96,7 @@ fn main() {
 
     let cmd_file = dir.join(md5);
 
-    if check_file(&cmd_file) {
-        let mut stdin = std::fs::File::open(cmd_file).unwrap();
-        let mut stdout = io::stdout();
-        io::copy(&mut stdin, &mut stdout);
-    }
-    else {
+    if !check_file(&cmd_file) {
         let tmp_dir = TempDir::new_in(dir.as_path(), "workdir").unwrap();
         let tmp_path = tmp_dir.path().join("work");
         let file = std::fs::File::create(&tmp_path).unwrap();
@@ -122,5 +117,9 @@ fn main() {
     
         std::fs::rename(&tmp_path, &cmd_file).expect(format!("renamed failed {:?} -> {:?}", &tmp_path, &cmd_file).as_ref());
     }
+
+    let mut stdin = std::fs::File::open(cmd_file).unwrap();
+    let mut stdout = io::stdout();
+    io::copy(&mut stdin, &mut stdout);
 }
   
