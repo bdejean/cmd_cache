@@ -101,7 +101,6 @@ fn main() {
         let mut child = std::process::Command::new(cmd)
             .args(&args[1..args.len()])
             .stdin(std::process::Stdio::null())
-            .stderr(std::process::Stdio::null())
             .stdout(stdout)
             .spawn()
             .expect(format!("failed to execute {:?}", args).as_ref());
