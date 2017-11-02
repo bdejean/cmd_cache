@@ -75,13 +75,10 @@ fn check_file(file: &PathBuf) -> bool{
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
     let joined = concat_args(&args);
-    println!("{}", joined);
 
     let md5 = hash(joined);
-    println!("{}", md5);
 
     let max_days = get_max_days();
-    println!("{}", max_days);
 
     let dir = check_or_create_dir();
 
