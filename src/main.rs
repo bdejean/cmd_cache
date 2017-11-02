@@ -99,8 +99,6 @@ fn main() {
 
     let md5 = hash(joined);
 
-    let max_days = get_max_days();
-
     let dir = check_or_create_dir();
 
     let cmd_file = dir.join(md5);
