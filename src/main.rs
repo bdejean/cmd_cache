@@ -73,8 +73,7 @@ fn check_file(file: &PathBuf) -> bool{
 }
 
 fn main() {
-    let mut args: Vec<String> = env::args().collect();
-    args.remove(0);
+    let args: Vec<String> = env::args().skip(1).collect();
     let joined = concat_args(&args);
     println!("{}", joined);
 
