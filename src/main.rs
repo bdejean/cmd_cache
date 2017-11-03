@@ -40,26 +40,26 @@ use crypto::digest::Digest;
 const MAX_DAYS_DEFAULT : f32 = 7.0;
 
 
-fn concat_args(args : &Vec<String>) -> String {
+fn concat_args(args : &[String]) -> String {
 //    args.remove(0);
     let joined = args.join("@@join@@");
     return joined;
 }
 
-fn hash(s :String) -> String {
+fn hash(s : &str) -> String {
     let mut h = Md5::new();
-    h.input_str(&s);
+    h.input_str(s);
     return h.result_str();
 }
 
 fn get_max_days() -> f32 {
     match env::var("CMD_CACHE_MAX_DAYS") {
-        Ok(val) => return check_max_days(val),
+        Ok(val) => return check_max_days(&val),
         Err(_) => return MAX_DAYS_DEFAULT
     }
 }
 
-fn check_max_days(s: String) -> f32  {
+fn check_max_days(s: &str) -> f32  {
     match s.parse::<f32>() {
         Ok(val) => {
             if val >= 0.0 {return val}
@@ -97,7 +97,7 @@ fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
     let joined = concat_args(&args);
 
-    let md5 = hash(joined);
+    let md5 = hash(&joined);
 
     let dir = check_or_create_dir();
 
