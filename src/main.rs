@@ -46,32 +46,12 @@ fn concat_args(args : &[String]) -> String {
     return joined;
 }
 
-
-# [test]
-fn test_concat_args() {
-    let args = [String::from("foo")];
-    assert_eq!("foo", concat_args(&args));
-
-    let args = [String::from("foo"), String::from("bar")];
-    assert_eq!("foo@@join@@bar", concat_args(&args));
-}
-    
-
 fn hash(s : &str) -> String {
     let mut h = Md5::new();
     h.input_str(s);
     return h.result_str();
 }
 
-
-# [test]
-fn test_hash() {
-    let s = "foo";
-    assert_eq!(hash(&s), "acbd18db4cc2f85cedef654fccc4a4d8");
-}
-
-
-// TODO unittest !
 fn get_max_days() -> f32 {
     match env::var("CMD_CACHE_MAX_DAYS") {
         Ok(val) => return check_max_days(&val),
@@ -79,21 +59,11 @@ fn get_max_days() -> f32 {
     }
 }
 
-
-
 fn check_max_days(s: &str) -> f32  {
     match s.parse::<f32>() {
         Ok(val) if val >= 0.0 => {return val;},
         _ => {return MAX_DAYS_DEFAULT;},
     }
-}
-
-# [test]
-fn test_check_max_days() {
-    assert_eq!(check_max_days("foo"), MAX_DAYS_DEFAULT);
-    assert_eq!(check_max_days("-1"), MAX_DAYS_DEFAULT);
-    assert_eq!(check_max_days("1a"), MAX_DAYS_DEFAULT);
-    assert_eq!(check_max_days("1.03"), 1.03);
 }
 
 
@@ -156,4 +126,34 @@ fn main() {
     let mut stdout = io::stdout();
     io::copy(&mut stdin, &mut stdout);
 }
-  
+
+
+#[cfg(test)]
+mod test {
+
+    use ::*;
+
+    #[test]
+    fn test_concat_args() {
+        let args = [String::from("foo")];
+        assert_eq!("foo", concat_args(&args));
+        let args = [String::from("foo"), String::from("bar")];
+        assert_eq!("foo@@join@@bar", concat_args(&args));
+    }
+
+    #[test]
+    fn test_hash() {
+        let s = "foo";
+        assert_eq!(hash(&s), "acbd18db4cc2f85cedef654fccc4a4d8");
+    }
+
+
+    #[test]
+    fn test_check_max_days() {
+        assert_eq!(check_max_days("foo"), MAX_DAYS_DEFAULT);
+        assert_eq!(check_max_days("-1"), MAX_DAYS_DEFAULT);
+        assert_eq!(check_max_days("1a"), MAX_DAYS_DEFAULT);
+        assert_eq!(check_max_days("1.03"), 1.03);
+    }
+
+}
