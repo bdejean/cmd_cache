@@ -180,10 +180,34 @@ mod test {
 
     #[test]
     fn test_cmd_cache() {
+        let old_days = clean_env("CMD_CACHE_MAX_DAYS");
+        env::set_var("CMD_CACHE_MAX_DAYS", "1");
+
+        let old_home = clean_env("home");
+        let tmp = TempDir::new("test_dir").unwrap();
+        let home = tmp.path();
+        env::set_var("HOME", home);
+        
         let msg = "hello world";
+
+        // never execute before
         let mut o : Vec<u8> = Vec::new();
         cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
+
+        // hits cache
+        let mut o : Vec<u8> = Vec::new();
+        cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
+        assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
+
+        // cache to old
+        env::set_var("CMD_CACHE_MAX_DAYS", "0");
+        let mut o : Vec<u8> = Vec::new();
+        cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
+        assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
+        
+        restore_env("CMD_CACHE_MAX_DAYS", old_days);
+        restore_env("HOME", old_home);
     }
         
     #[test]
