@@ -88,9 +88,10 @@ fn check_file(file: &PathBuf) -> bool{
     let file_time = metadata.modified().unwrap();
     let duration = Duration::from_secs((get_max_days() * 24.0 * 3600.0) as u64);
     return file_time + duration > SystemTime::now();
+
 }
 
-fn main() {
+fn cmd_cache(output : &mut std::io::Write) {
     let args: Vec<String> = env::args().skip(1).collect();
     let joined = concat_args(&args);
 
@@ -123,8 +124,12 @@ fn main() {
     }
 
     let mut stdin = std::fs::File::open(cmd_file).unwrap();
+    io::copy(&mut stdin, output);
+}
+
+fn main() {
     let mut stdout = io::stdout();
-    io::copy(&mut stdin, &mut stdout);
+    cmd_cache(&mut stdout);
 }
 
 
