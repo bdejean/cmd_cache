@@ -71,6 +71,7 @@ fn test_hash() {
 }
 
 
+// TODO unittest !
 fn get_max_days() -> f32 {
     match env::var("CMD_CACHE_MAX_DAYS") {
         Ok(val) => return check_max_days(&val),
@@ -78,11 +79,21 @@ fn get_max_days() -> f32 {
     }
 }
 
+
+
 fn check_max_days(s: &str) -> f32  {
     match s.parse::<f32>() {
         Ok(val) if val >= 0.0 => {return val;},
         _ => {return MAX_DAYS_DEFAULT;},
     }
+}
+
+# [test]
+fn test_check_max_days() {
+    assert_eq!(check_max_days("foo"), MAX_DAYS_DEFAULT);
+    assert_eq!(check_max_days("-1"), MAX_DAYS_DEFAULT);
+    assert_eq!(check_max_days("1a"), MAX_DAYS_DEFAULT);
+    assert_eq!(check_max_days("1.03"), 1.03);
 }
 
 
