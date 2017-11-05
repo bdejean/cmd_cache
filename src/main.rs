@@ -170,4 +170,41 @@ mod test {
         cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
     }
+
+    fn clean_env(key : &str) -> Option <String>{
+        match env::var(key) {
+            Ok(value) => {env::remove_var(key);
+                      return Some(value);},
+            _ => None
+        }
+    }
+
+    fn restore_env(key : &str, value :Option <String>) {
+        match value {
+            Some(val) => { env::set_var(key, val);},
+            None => { }
+        }
+    }
+            
+        
+    #[test]
+    fn test_get_max_days() {
+        
+        let old = clean_env("CMD_CACHE_MAX_DAYS");
+        assert_eq!(get_max_days(), MAX_DAYS_DEFAULT);
+
+        env::set_var("CMD_CACHE_MAX_DAYS", "foo");
+        assert_eq!(get_max_days(), MAX_DAYS_DEFAULT);
+
+        env::set_var("CMD_CACHE_MAX_DAYS", "-1");
+        assert_eq!(get_max_days(), MAX_DAYS_DEFAULT);
+
+        env::set_var("CMD_CACHE_MAX_DAYS", "0");
+        assert_eq!(get_max_days(), 0.0);
+
+        env::set_var("CMD_CACHE_MAX_DAYS", "1.0");
+        assert_eq!(get_max_days(), 1.0);
+
+        restore_env("CMD_CACHE_MAX_DAYS", old);
+    }
 }
