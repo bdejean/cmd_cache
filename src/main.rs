@@ -46,6 +46,17 @@ fn concat_args(args : &[String]) -> String {
     return joined;
 }
 
+
+# [test]
+fn test_concat_args() {
+    let args = [String::from("foo")];
+    assert_eq!("foo", concat_args(&args));
+
+    let args = [String::from("foo"), String::from("bar")];
+    assert_eq!("foo@@join@@bar", concat_args(&args));
+}
+    
+
 fn hash(s : &str) -> String {
     let mut h = Md5::new();
     h.input_str(s);
