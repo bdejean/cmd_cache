@@ -91,8 +91,8 @@ fn check_file(file: &PathBuf) -> bool{
 
 }
 
-fn cmd_cache(output : &mut std::io::Write) {
-    let args: Vec<String> = env::args().skip(1).collect();
+fn cmd_cache(argv : std::env::Args, output : &mut std::io::Write) {
+    let args: Vec<String> = argv.skip(1).collect();
     let joined = concat_args(&args);
 
     let md5 = hash(&joined);
@@ -129,7 +129,7 @@ fn cmd_cache(output : &mut std::io::Write) {
 
 fn main() {
     let mut stdout = io::stdout();
-    cmd_cache(&mut stdout);
+    cmd_cache(std::env::args(), &mut io::stdout());
 }
 
 
