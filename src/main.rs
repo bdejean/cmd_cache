@@ -228,5 +228,24 @@ mod test {
 
         restore_env("HOME", old);
     }
+
+    #[test]
+    fn test_check_file() {
+        let tmp = TempDir::new("test_dir").unwrap();
+        let file = tmp.path().join("fake");
+
+        assert_eq!(check_file(&file), false);
+
+        let mut fileh = std::fs::File::create(&file).unwrap();
         
+        let old = clean_env("CMD_CACHE_MAX_DAYS");
+
+        env::set_var("CMD_CACHE_MAX_DAYS", "0");
+        assert_eq!(check_file(&file), false);
+
+        env::set_var("CMD_CACHE_MAX_DAYS", "1");
+        assert_eq!(check_file(&file), true);
+        
+        restore_env("CMD_CACHE_MAX_DAYS", old);
+    }
 }
