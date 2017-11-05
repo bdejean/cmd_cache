@@ -137,6 +137,21 @@ mod test {
 
     use ::*;
 
+    fn clean_env(key : &str) -> Option <String>{
+        match env::var(key) {
+            Ok(value) => {env::remove_var(key);
+                      return Some(value);},
+            _ => None
+        }
+    }
+
+    fn restore_env(key : &str, value :Option <String>) {
+        match value {
+            Some(val) => { env::set_var(key, val);},
+            None => { }
+        }
+    }
+                
     #[test]
     fn test_concat_args() {
         let args = [String::from("foo")];
@@ -170,22 +185,6 @@ mod test {
         cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
     }
-
-    fn clean_env(key : &str) -> Option <String>{
-        match env::var(key) {
-            Ok(value) => {env::remove_var(key);
-                      return Some(value);},
-            _ => None
-        }
-    }
-
-    fn restore_env(key : &str, value :Option <String>) {
-        match value {
-            Some(val) => { env::set_var(key, val);},
-            None => { }
-        }
-    }
-            
         
     #[test]
     fn test_get_max_days() {
