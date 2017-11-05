@@ -160,4 +160,11 @@ mod test {
         assert_eq!(check_max_days("1.03"), 1.03);
     }
 
+    #[test]
+    fn test_cmd_cache() {
+        let msg = "hello world";
+        let mut o : Vec<u8> = Vec::new();
+        cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
+        assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
+    }
 }
