@@ -61,11 +61,8 @@ fn get_max_days() -> f32 {
 
 fn check_max_days(s: &str) -> f32  {
     match s.parse::<f32>() {
-        Ok(val) => {
-            if val >= 0.0 {return val}
-            return MAX_DAYS_DEFAULT;
-        },
-        Err(_) => return MAX_DAYS_DEFAULT,
+        Ok(val) if val >= 0.0 => {return val;},
+        _ => {return MAX_DAYS_DEFAULT;},
     }
 }
 
