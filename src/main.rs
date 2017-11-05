@@ -200,7 +200,7 @@ mod test {
         cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
 
-        // cache to old
+        // cache too old
         env::set_var("CMD_CACHE_MAX_DAYS", "0");
         let mut o : Vec<u8> = Vec::new();
         cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
