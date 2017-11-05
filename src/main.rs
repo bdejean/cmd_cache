@@ -63,6 +63,14 @@ fn hash(s : &str) -> String {
     return h.result_str();
 }
 
+
+# [test]
+fn test_hash() {
+    let s = "foo";
+    assert_eq!(hash(&s), "acbd18db4cc2f85cedef654fccc4a4d8");
+}
+
+
 fn get_max_days() -> f32 {
     match env::var("CMD_CACHE_MAX_DAYS") {
         Ok(val) => return check_max_days(&val),
