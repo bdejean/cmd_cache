@@ -158,6 +158,9 @@ mod test {
         assert_eq!(check_max_days("-1"), MAX_DAYS_DEFAULT);
         assert_eq!(check_max_days("1a"), MAX_DAYS_DEFAULT);
         assert_eq!(check_max_days("1.03"), 1.03);
+        assert_eq!(check_max_days("0"), 0 as f32);
+        assert_eq!(check_max_days("6"), 6 as f32);
+        assert_eq!(check_max_days("30"), 30 as f32);
     }
 
     #[test]
