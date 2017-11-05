@@ -207,4 +207,26 @@ mod test {
 
         restore_env("CMD_CACHE_MAX_DAYS", old);
     }
+
+    #[test]
+    fn test_check_or_create_dir() {
+        let old = clean_env("HOME");
+        
+        let tmp = TempDir::new("test_dir").unwrap();
+        let home = tmp.path();
+
+        env::set_var("HOME", home);
+        
+        let result = tmp.path().join(".cmd_cache"); 
+        // .cmd_cache doesn't exists at this point.
+        assert_eq!(check_or_create_dir(),
+                   result);
+
+        // .cmd_cache exists at this point.
+        assert_eq!(check_or_create_dir(),
+                   result);
+
+        restore_env("HOME", old);
+    }
+        
 }
