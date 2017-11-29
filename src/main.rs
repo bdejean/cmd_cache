@@ -259,7 +259,7 @@ mod test {
 
         assert_eq!(check_file(&file), false);
 
-        let mut fileh = std::fs::File::create(&file).unwrap();
+        let _fileh = std::fs::File::create(&file).unwrap();
         
         let old = clean_env("CMD_CACHE_MAX_DAYS");
 
