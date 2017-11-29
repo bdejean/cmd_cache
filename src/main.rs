@@ -123,7 +123,7 @@ fn cmd_cache(args : &[String], output : &mut std::io::Write) {
     }
 
     let mut stdin = std::fs::File::open(cmd_file).unwrap();
-    io::copy(&mut stdin, output);
+    io::copy(&mut stdin, output).expect("failed to display command output");
 }
 
 fn main() {
