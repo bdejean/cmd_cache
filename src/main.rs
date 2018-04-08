@@ -133,7 +133,24 @@ fn main() {
 #[cfg(test)]
 mod test {
 
+    extern crate rand;
+
     use ::*;
+
+    fn rand_f32(from: f32, to: f32) -> f32 {
+        use test::rand::distributions::{IndependentSample, Range};
+        let range = Range::new(from, to);
+        // yes, it's silly, creates a new rng each time
+        return range.ind_sample(&mut rand::thread_rng());
+    }
+
+    #[test]
+    fn test_rand_f32() {
+        let (f, t) = (-1983.0, 69.0);
+        let v = rand_f32(f, t);
+        assert!(f <= v);
+        assert!(v < t);
+    }
 
     fn clean_env(key : &str) -> Option <String>{
         match env::var(key) {
@@ -174,6 +191,9 @@ mod test {
         assert_eq!(check_max_days("0"), 0 as f32);
         assert_eq!(check_max_days("6"), 6 as f32);
         assert_eq!(check_max_days("30"), 30 as f32);
+
+        let d = rand_f32(0.0, 42.0);
+        assert_eq!(check_max_days(&format!("{}", d)), d);
     }
 
     #[test]
@@ -204,6 +224,11 @@ mod test {
         cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
         
+        let mut o : Vec<u8> = Vec::new();
+        let v = format!("{}", rand_f32(-42.0, 42.0));
+        cmd_cache(&[String::from("echo"), v.to_owned()], &mut o);
+        assert_eq!(v + "\n", String::from_utf8(o).unwrap());
+
         restore_env("CMD_CACHE_MAX_DAYS", old_days);
         restore_env("HOME", old_home);
     }
@@ -225,6 +250,10 @@ mod test {
 
         env::set_var("CMD_CACHE_MAX_DAYS", "1.0");
         assert_eq!(get_max_days(), 1.0);
+
+        let d = rand_f32(0.0, 42.0);
+        env::set_var("CMD_CACHE_MAX_DAYS", format!("{}", d));
+        assert_eq!(get_max_days(), d);
 
         restore_env("CMD_CACHE_MAX_DAYS", old);
     }
