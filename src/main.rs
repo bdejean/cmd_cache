@@ -50,14 +50,8 @@ fn hash(s : &str) -> String {
     return h.result_str();
 }
 
-fn get_max_days() -> f32 {
-    match env::var("CMD_CACHE_MAX_DAYS") {
-        Ok(val) => return check_max_days(&val),
-        Err(_) => return MAX_DAYS_DEFAULT
-    }
-}
 
-fn check_max_days(s: &str) -> f32  {
+fn get_max_days(s: &str) -> f32  {
     match s.parse::<f32>() {
         Ok(val) if val >= 0.0 => {return val;},
         _ => {return MAX_DAYS_DEFAULT;},
@@ -65,9 +59,7 @@ fn check_max_days(s: &str) -> f32  {
 }
 
 
-fn check_or_create_dir() -> PathBuf {
-    let home = env::var("HOME").expect("HOME not set!");
-
+fn check_or_create_dir(home: &str) -> PathBuf {
     let dir = Path::new(&home).join(".cmd_cache");
 
     if !dir.is_dir() {
@@ -77,14 +69,14 @@ fn check_or_create_dir() -> PathBuf {
     return dir;
 }
 
-fn check_file(file: &PathBuf) -> Option<SystemTime> {
+fn check_file(max_days: f32, file: &PathBuf) -> Option<SystemTime> {
     let ok = file.is_file();
 
     if ! ok { return None; }
     
     let metadata = fs::metadata(file).unwrap();
     let file_time = metadata.modified().unwrap();
-    let duration = Duration::from_secs((get_max_days() * 24.0 * 3600.0) as u64);
+    let duration = Duration::from_secs((max_days * 24.0 * 3600.0) as u64);
     if file_time + duration > SystemTime::now() {
         return Some(file_time);
     } else {
@@ -92,16 +84,16 @@ fn check_file(file: &PathBuf) -> Option<SystemTime> {
     }
 }
 
-fn cmd_cache(args : &[String], output : &mut std::io::Write) {
+fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut std::io::Write) {
     let joined = concat_args(&args);
 
     let md5 = hash(&joined);
 
-    let dir = check_or_create_dir();
+    let dir = check_or_create_dir(home);
 
     let cmd_file = dir.join(md5);
 
-    match check_file(&cmd_file) {
+    match check_file(max_days, &cmd_file) {
         Some(ts) => {
                     eprint!("# using cached output from {:?}\n", ts);
         }
@@ -133,8 +125,11 @@ fn cmd_cache(args : &[String], output : &mut std::io::Write) {
 }
 
 fn main() {
+    let env_max_days = env::var("CMD_CACHE_MAX_DAYS").unwrap_or_default();
+    let max_days = get_max_days(&env_max_days);
+    let home = env::var("HOME").expect("HOME not set!");
     let args : Vec<String> = std::env::args().skip(1).collect();
-    cmd_cache(&args, &mut io::stdout());
+    cmd_cache(&args, &home, max_days, &mut io::stdout());
 }
 
 
@@ -191,119 +186,71 @@ mod test {
 
 
     #[test]
-    fn test_check_max_days() {
-        assert_eq!(check_max_days("foo"), MAX_DAYS_DEFAULT);
-        assert_eq!(check_max_days("-1"), MAX_DAYS_DEFAULT);
-        assert_eq!(check_max_days("1a"), MAX_DAYS_DEFAULT);
-        assert_eq!(check_max_days("1.03"), 1.03);
-        assert_eq!(check_max_days("0"), 0 as f32);
-        assert_eq!(check_max_days("6"), 6 as f32);
-        assert_eq!(check_max_days("30"), 30 as f32);
+    fn test_get_max_days() {
+        assert_eq!(get_max_days(""), MAX_DAYS_DEFAULT);
+        assert_eq!(get_max_days("-1"), MAX_DAYS_DEFAULT);
+        assert_eq!(get_max_days("0"), 0.0);
+        assert_eq!(get_max_days("1.0"), 1.0);
+        assert_eq!(get_max_days("1.03"), 1.03);
+        assert_eq!(get_max_days("1a"), MAX_DAYS_DEFAULT);
+        assert_eq!(get_max_days("30"), 30.0);
+        assert_eq!(get_max_days("6"), 6.0);
+        assert_eq!(get_max_days("foo"), MAX_DAYS_DEFAULT);
 
         let d = rand_f32(0.0, 42.0);
-        assert_eq!(check_max_days(&format!("{}", d)), d);
+        assert_eq!(get_max_days(&format!("{}", d)), d);
     }
 
     #[test]
     fn test_cmd_cache() {
-        let old_days = clean_env("CMD_CACHE_MAX_DAYS");
-        env::set_var("CMD_CACHE_MAX_DAYS", "1");
-
-        let old_home = clean_env("home");
-        let tmp = TempDir::new("test_dir").unwrap();
-        let home = tmp.path();
-        env::set_var("HOME", home);
+        let tmp = TempDir::new("test_cmd_cache").unwrap();
+        let home = tmp.path().to_str().unwrap();
         
         let msg = "hello world";
 
         // never execute before
         let mut o : Vec<u8> = Vec::new();
-        cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
+        cmd_cache(&[String::from("echo"), String::from(msg)], home, 1.0, &mut o);
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
 
         // hits cache
         let mut o : Vec<u8> = Vec::new();
-        cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
+        cmd_cache(&[String::from("echo"), String::from(msg)], home, 1.0, &mut o);
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
 
         // cache too old
-        env::set_var("CMD_CACHE_MAX_DAYS", "0");
         let mut o : Vec<u8> = Vec::new();
-        cmd_cache(&[String::from("echo"), String::from(msg)], &mut o);
+        cmd_cache(&[String::from("echo"), String::from(msg)], home, 0.0, &mut o);
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
         
         let mut o : Vec<u8> = Vec::new();
         let v = format!("{}", rand_f32(-42.0, 42.0));
-        cmd_cache(&[String::from("echo"), v.to_owned()], &mut o);
+        cmd_cache(&[String::from("echo"), v.to_owned()], home, 0.0, &mut o);
         assert_eq!(v + "\n", String::from_utf8(o).unwrap());
-
-        restore_env("CMD_CACHE_MAX_DAYS", old_days);
-        restore_env("HOME", old_home);
     }
         
-    #[test]
-    fn test_get_max_days() {
-        
-        let old = clean_env("CMD_CACHE_MAX_DAYS");
-        assert_eq!(get_max_days(), MAX_DAYS_DEFAULT);
-
-        env::set_var("CMD_CACHE_MAX_DAYS", "foo");
-        assert_eq!(get_max_days(), MAX_DAYS_DEFAULT);
-
-        env::set_var("CMD_CACHE_MAX_DAYS", "-1");
-        assert_eq!(get_max_days(), MAX_DAYS_DEFAULT);
-
-        env::set_var("CMD_CACHE_MAX_DAYS", "0");
-        assert_eq!(get_max_days(), 0.0);
-
-        env::set_var("CMD_CACHE_MAX_DAYS", "1.0");
-        assert_eq!(get_max_days(), 1.0);
-
-        let d = rand_f32(0.0, 42.0);
-        env::set_var("CMD_CACHE_MAX_DAYS", format!("{}", d));
-        assert_eq!(get_max_days(), d);
-
-        restore_env("CMD_CACHE_MAX_DAYS", old);
-    }
 
     #[test]
     fn test_check_or_create_dir() {
-        let old = clean_env("HOME");
-        
-        let tmp = TempDir::new("test_dir").unwrap();
-        let home = tmp.path();
+        let tmp = TempDir::new("test_check_or_create_dir").unwrap();
+        let home = tmp.path().to_str().unwrap();
 
-        env::set_var("HOME", home);
-        
         let result = tmp.path().join(".cmd_cache"); 
         // .cmd_cache doesn't exists at this point.
-        assert_eq!(check_or_create_dir(),
-                   result);
+        assert_eq!(check_or_create_dir(home), result);
 
         // .cmd_cache exists at this point.
-        assert_eq!(check_or_create_dir(),
-                   result);
-
-        restore_env("HOME", old);
+        assert_eq!(check_or_create_dir(home), result);
     }
 
     #[test]
     fn test_check_file() {
-        let tmp = TempDir::new("test_dir").unwrap();
+        let tmp = TempDir::new("test_check_file").unwrap();
         let file = tmp.path().join("fake");
-
-        assert!(check_file(&file).is_none());
-
         let _fileh = std::fs::File::create(&file).unwrap();
         
-        let old = clean_env("CMD_CACHE_MAX_DAYS");
+        assert!(check_file(0.0, &file).is_none());
 
-        env::set_var("CMD_CACHE_MAX_DAYS", "0");
-        assert!(check_file(&file).is_none());
-
-        env::set_var("CMD_CACHE_MAX_DAYS", "1");
-        assert!(check_file(&file).is_some());
-        
-        restore_env("CMD_CACHE_MAX_DAYS", old);
+        assert!(check_file(1.0, &file).is_some());
     }
 }
