@@ -77,16 +77,19 @@ fn check_or_create_dir() -> PathBuf {
     return dir;
 }
 
-fn check_file(file: &PathBuf) -> bool{
+fn check_file(file: &PathBuf) -> Option<SystemTime> {
     let ok = file.is_file();
 
-    if ! ok { return false; }
+    if ! ok { return None; }
     
     let metadata = fs::metadata(file).unwrap();
     let file_time = metadata.modified().unwrap();
     let duration = Duration::from_secs((get_max_days() * 24.0 * 3600.0) as u64);
-    return file_time + duration > SystemTime::now();
-
+    if file_time + duration > SystemTime::now() {
+        return Some(file_time);
+    } else {
+        return None;
+    }
 }
 
 fn cmd_cache(args : &[String], output : &mut std::io::Write) {
@@ -98,26 +101,31 @@ fn cmd_cache(args : &[String], output : &mut std::io::Write) {
 
     let cmd_file = dir.join(md5);
 
-    if !check_file(&cmd_file) {
-        eprint!("# Really running {:?}\n", args);
-        let tmp_dir = TempDir::new_in(dir.as_path(), "workdir").unwrap();
-        let tmp_path = tmp_dir.path().join("work");
-        let file = std::fs::File::create(&tmp_path).unwrap();
+    match check_file(&cmd_file) {
+        Some(ts) => {
+                    eprint!("# using cached output from {:?}\n", ts);
+        }
+        None => {
+            eprint!("# Really running {:?}\n", args);
+            let tmp_dir = TempDir::new_in(dir.as_path(), "workdir").unwrap();
+            let tmp_path = tmp_dir.path().join("work");
+            let file = std::fs::File::create(&tmp_path).unwrap();
 
-        let stdout = std::process::Stdio::from(file);
+            let stdout = std::process::Stdio::from(file);
 
-        let cmd = &args[0];
+            let cmd = &args[0];
 
-        let mut child = std::process::Command::new(cmd)
-            .args(&args[1..args.len()])
-            .stdin(std::process::Stdio::null())
-            .stdout(stdout)
-            .spawn()
-            .expect(format!("failed to execute {:?}", args).as_ref());
+            let mut child = std::process::Command::new(cmd)
+                .args(&args[1..args.len()])
+                .stdin(std::process::Stdio::null())
+                .stdout(stdout)
+                .spawn()
+                .expect(format!("failed to execute {:?}", args).as_ref());
 
-        child.wait().expect(format!("failed to wait {:?}", args).as_ref());
+            child.wait().expect(format!("failed to wait {:?}", args).as_ref());
     
-        std::fs::rename(&tmp_path, &cmd_file).expect(format!("renamed failed {:?} -> {:?}", &tmp_path, &cmd_file).as_ref());
+            std::fs::rename(&tmp_path, &cmd_file).expect(format!("renamed failed {:?} -> {:?}", &tmp_path, &cmd_file).as_ref());
+        }
     }
 
     let mut stdin = std::fs::File::open(cmd_file).unwrap();
@@ -284,17 +292,17 @@ mod test {
         let tmp = TempDir::new("test_dir").unwrap();
         let file = tmp.path().join("fake");
 
-        assert_eq!(check_file(&file), false);
+        assert!(check_file(&file).is_none());
 
         let _fileh = std::fs::File::create(&file).unwrap();
         
         let old = clean_env("CMD_CACHE_MAX_DAYS");
 
         env::set_var("CMD_CACHE_MAX_DAYS", "0");
-        assert_eq!(check_file(&file), false);
+        assert!(check_file(&file).is_none());
 
         env::set_var("CMD_CACHE_MAX_DAYS", "1");
-        assert_eq!(check_file(&file), true);
+        assert!(check_file(&file).is_some());
         
         restore_env("CMD_CACHE_MAX_DAYS", old);
     }
