@@ -141,10 +141,10 @@ mod test {
     use ::*;
 
     fn rand_f32(from: f32, to: f32) -> f32 {
-        use test::rand::distributions::{IndependentSample, Range};
-        let range = Range::new(from, to);
+        use test::rand::{thread_rng, Rng};
         // yes, it's silly, creates a new rng each time
-        return range.ind_sample(&mut rand::thread_rng());
+        let n: f32 = thread_rng().gen_range(from, to);
+        return n;
     }
 
     #[test]
