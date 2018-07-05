@@ -20,6 +20,7 @@
 
 
 
+extern crate chrono;
 extern crate crypto;
 extern crate tempdir;
 
@@ -31,11 +32,37 @@ use std::time::{Duration, SystemTime};
 
 use tempdir::TempDir;
 
+use chrono::{Utc, TimeZone};
+
 use crypto::md5::Md5;
 use crypto::digest::Digest;
 
 
 const MAX_DAYS_DEFAULT : f32 = 7.0;
+
+
+fn dirty_system_time_to_str(t : &SystemTime) -> String {
+    return format!("{:?}", t);
+}
+
+fn dirty_parse_system_time(t : &SystemTime) -> u64 {
+    return dirty_parse_system_time_str(&dirty_system_time_to_str(t));
+}
+
+fn dirty_parse_system_time_str(t : &str) -> u64 {
+    let tokens = t.split(|c| c == ' ' || c == '\t' || c == ',');
+    for tok in tokens {
+        let v = tok.parse::<u64>();
+        if v.is_ok() {
+            return v.unwrap();
+        }
+    }
+    panic!("Cannot parse {:?}", t);
+}
+
+fn dirty_system_time_format(t : &SystemTime) -> String {
+    return Utc.timestamp(dirty_parse_system_time(t) as i64, 0).to_string();
+}
 
 
 fn concat_args(args : &[String]) -> String {
@@ -95,7 +122,7 @@ fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut std::io:
 
     match check_file(max_days, &cmd_file) {
         Some(ts) => {
-                    eprint!("# using cached output from {:?}\n", ts);
+                    eprint!("# using cached output from {}\n", dirty_system_time_format(&ts));
         }
         None => {
             eprint!("# Really running {:?}\n", args);
@@ -252,5 +279,11 @@ mod test {
         assert!(check_file(0.0, &file).is_none());
 
         assert!(check_file(1.0, &file).is_some());
+    }
+
+    #[test]
+    fn test_dirty_parse_system_time() {
+        assert!(dirty_parse_system_time(&SystemTime::now()) > 1530818304);
+        assert_eq!(dirty_parse_system_time_str("{ tv_sec: 1530549407, tv_nsec: 795369636 }"), 1530549407);
     }
 }

@@ -10,6 +10,8 @@ rust-crypto = "*"
 
 tempdir = "*"
 
+chrono = "*"
+
 [dev-dependencies]
 rand = "*"
 
