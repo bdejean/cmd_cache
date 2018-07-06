@@ -275,11 +275,16 @@ mod test {
 
     #[test]
     fn test_dirty_parse_system_time() {
-        let now = dirty_parse_system_time(&SystemTime::now());
+        let s_now = SystemTime::now();
+        let now = dirty_parse_system_time(&s_now);
         assert!(now.0 > 1530818304);
+        assert_eq!(format!("{:?}", s_now), format!("SystemTime {{ tv_sec: {}, tv_nsec: {} }}", now.0, now.1));
 
-        let x = dirty_parse_system_time_str("{ tv_sec: 1530549407, tv_nsec: 795369636 }");
-        assert_eq!(x.0, 1530549407);
-        assert_eq!(x.1, 795369636);
+
+        let (x_0, x_1) = (1530549407, 795369636);
+        let x = dirty_parse_system_time_str(&format!("{{ tv_sec: {}, tv_nsec: {} }}", x_0, x_1));
+        assert_eq!(x.0, x_0);
+        assert_eq!(x.1, x_1);
+
     }
 }
