@@ -41,23 +41,19 @@ use crypto::digest::Digest;
 const MAX_DAYS_DEFAULT : f32 = 7.0;
 
 
-fn dirty_parse_system_time(t : &SystemTime) -> u64 {
+fn dirty_parse_system_time(t : &SystemTime) -> (u64, u64) {
     return dirty_parse_system_time_str(&format!("{:?}", t));
 }
 
-fn dirty_parse_system_time_str(t : &str) -> u64 {
+fn dirty_parse_system_time_str(t : &str) -> (u64, u64) {
     let tokens = t.split(|c| c == ' ' || c == '\t' || c == ',');
-    for tok in tokens {
-        let v = tok.parse::<u64>();
-        if v.is_ok() {
-            return v.unwrap();
-        }
-    }
-    panic!("Cannot parse {:?}", t);
+    let mut ts = tokens.filter_map(|x| x.parse::<u64>().ok());
+    return (ts.next().unwrap(), ts.next().unwrap());
 }
 
 fn dirty_system_time_format(t : &SystemTime) -> String {
-    return Utc.timestamp(dirty_parse_system_time(t) as i64, 0).to_string();
+    let (sec, nsec) = dirty_parse_system_time(t);
+    return Utc.timestamp(sec as i64, nsec as u32).to_string();
 }
 
 
@@ -279,7 +275,11 @@ mod test {
 
     #[test]
     fn test_dirty_parse_system_time() {
-        assert!(dirty_parse_system_time(&SystemTime::now()) > 1530818304);
-        assert_eq!(dirty_parse_system_time_str("{ tv_sec: 1530549407, tv_nsec: 795369636 }"), 1530549407);
+        let now = dirty_parse_system_time(&SystemTime::now());
+        assert!(now.0 > 1530818304);
+
+        let x = dirty_parse_system_time_str("{ tv_sec: 1530549407, tv_nsec: 795369636 }");
+        assert_eq!(x.0, 1530549407);
+        assert_eq!(x.1, 795369636);
     }
 }
