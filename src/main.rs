@@ -41,12 +41,8 @@ use crypto::digest::Digest;
 const MAX_DAYS_DEFAULT : f32 = 7.0;
 
 
-fn dirty_system_time_to_str(t : &SystemTime) -> String {
-    return format!("{:?}", t);
-}
-
 fn dirty_parse_system_time(t : &SystemTime) -> u64 {
-    return dirty_parse_system_time_str(&dirty_system_time_to_str(t));
+    return dirty_parse_system_time_str(&format!("{:?}", t));
 }
 
 fn dirty_parse_system_time_str(t : &str) -> u64 {
