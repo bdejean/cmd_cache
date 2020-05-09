@@ -216,7 +216,7 @@ mod test {
         
         let msg = "hello world";
 
-        // never execute before
+        // never executed before
         let mut o : Vec<u8> = Vec::new();
         cmd_cache(&[String::from("echo"), String::from(msg)], home, 1.0, &mut o);
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
@@ -231,11 +231,14 @@ mod test {
         cmd_cache(&[String::from("echo"), String::from(msg)], home, 0.0, &mut o);
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
         
+        // with a random string, multiple invocations
         use test::rand::{thread_rng, Rng, distributions::Alphanumeric};
-        let mut o : Vec<u8> = Vec::new();
-        let v : String = thread_rng().sample_iter(&Alphanumeric).take(42).collect();
-        cmd_cache(&[String::from("echo"), v.to_owned()], home, 0.0, &mut o);
-        assert_eq!(v + "\n", String::from_utf8(o).unwrap());
+        let msg : String = thread_rng().sample_iter(&Alphanumeric).take(42).collect();
+        for _ in 0..10 {
+            let mut o : Vec<u8> = Vec::new();
+            cmd_cache(&[String::from("echo"), msg.to_owned()], home, 1.0, &mut o);
+            assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
+        }
     }
 
 
