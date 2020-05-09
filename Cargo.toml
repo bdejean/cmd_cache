@@ -8,7 +8,7 @@ license = "GPL-3.0"
 
 rust-crypto = "*"
 
-tempdir = "*"
+tempfile = "*"
 
 chrono = "*"
 

@@ -22,7 +22,7 @@
 
 extern crate chrono;
 extern crate crypto;
-extern crate tempdir;
+extern crate tempfile;
 
 use std::env;
 use std::fs;
@@ -30,7 +30,7 @@ use std::io;
 use std::path::{Path,PathBuf};
 use std::time::{Duration, SystemTime};
 
-use tempdir::TempDir;
+use tempfile::NamedTempFile;
 
 use chrono::{Local, Utc, TimeZone};
 
@@ -118,11 +118,10 @@ fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut dyn std:
         }
         None => {
             eprint!("# Really running {:?}\n", args);
-            let tmp_dir = TempDir::new_in(dir.as_path(), "workdir").unwrap();
-            let tmp_path = tmp_dir.path().join("work");
-            let file = std::fs::File::create(&tmp_path).unwrap();
+            let tmp = NamedTempFile::new_in(dir.as_path()).unwrap();
 
-            let stdout = std::process::Stdio::from(file);
+            // from() moves the File, and into_file() as well, so the trick is try_clone()
+            let stdout = std::process::Stdio::from(tmp.as_file().try_clone().unwrap());
 
             let cmd = &args[0];
 
@@ -134,8 +133,10 @@ fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut dyn std:
                 .expect(format!("failed to execute {:?}", args).as_ref());
 
             child.wait().expect(format!("failed to wait {:?}", args).as_ref());
-    
-            std::fs::rename(&tmp_path, &cmd_file).expect(format!("renamed failed {:?} -> {:?}", &tmp_path, &cmd_file).as_ref());
+
+            // need to prepare the error message before because tmp.persist moves tmp
+            let error_message = format!("failed to rename {:?} -> {:?}", &tmp.path(), &cmd_file);
+            tmp.persist(&cmd_file).expect(error_message.as_ref());
         }
     }
 
@@ -157,6 +158,7 @@ mod test {
 
     extern crate rand;
 
+    use tempfile::tempdir;
     use ::*;
 
     fn rand_f32(from: f32, to: f32) -> f32 {
@@ -222,7 +224,8 @@ mod test {
 
     #[test]
     fn test_cmd_cache() {
-        let tmp = TempDir::new("test_cmd_cache").unwrap();
+
+        let tmp = tempdir().unwrap();
         let home = tmp.path().to_str().unwrap();
         
         let msg = "hello world";
@@ -247,11 +250,11 @@ mod test {
         cmd_cache(&[String::from("echo"), v.to_owned()], home, 0.0, &mut o);
         assert_eq!(v + "\n", String::from_utf8(o).unwrap());
     }
-        
+
 
     #[test]
     fn test_check_or_create_dir() {
-        let tmp = TempDir::new("test_check_or_create_dir").unwrap();
+        let tmp = tempdir().unwrap();
         let home = tmp.path().to_str().unwrap();
 
         let result = tmp.path().join(".cmd_cache"); 
@@ -264,7 +267,7 @@ mod test {
 
     #[test]
     fn test_check_file() {
-        let tmp = TempDir::new("test_check_file").unwrap();
+        let tmp = tempdir().unwrap();
         let file = tmp.path().join("fake");
         let _fileh = std::fs::File::create(&file).unwrap();
         
