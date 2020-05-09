@@ -9,12 +9,12 @@ description = "A command line tool that runs a command and caches its output."
 
 [dependencies]
 
-rust-crypto = "*"
+rust-crypto = ">=0.2.36"
 
-tempfile = "*"
+tempfile = ">=3.1.0"
 
-chrono = "*"
+chrono = ">=0.4.11"
 
 [dev-dependencies]
-rand = "*"
+rand = ">=0.7.3"
 
