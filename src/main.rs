@@ -1,4 +1,4 @@
-/* Copyright (C) 2017
+/* Copyright (C) 2017-2020
  * Benoît Dejean <bdejean@gmail.com>
  * Cyprien Le Pannérer <cyplp@free.fr>
  *
