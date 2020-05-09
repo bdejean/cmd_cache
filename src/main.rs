@@ -103,7 +103,7 @@ fn check_file(max_days: f32, file: &PathBuf) -> Option<SystemTime> {
     }
 }
 
-fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut std::io::Write) {
+fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut dyn std::io::Write) {
     let joined = concat_args(&args);
 
     let md5 = hash(&joined);
