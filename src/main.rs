@@ -161,21 +161,6 @@ mod test {
     use tempfile::tempdir;
     use ::*;
 
-    fn rand_f32(from: f32, to: f32) -> f32 {
-        use test::rand::{thread_rng, Rng};
-        // yes, it's silly, creates a new rng each time
-        let n: f32 = thread_rng().gen_range(from, to);
-        return n;
-    }
-
-    #[test]
-    fn test_rand_f32() {
-        let (f, t) = (-1983.0, 69.0);
-        let v = rand_f32(f, t);
-        assert!(f <= v);
-        assert!(v < t);
-    }
-
     fn clean_env(key : &str) -> Option <String>{
         match env::var(key) {
             Ok(value) => {env::remove_var(key);
@@ -218,7 +203,8 @@ mod test {
         assert_eq!(get_max_days("6"), 6.0);
         assert_eq!(get_max_days("foo"), MAX_DAYS_DEFAULT);
 
-        let d = rand_f32(0.0, 42.0);
+        use test::rand::{thread_rng, Rng};
+        let d = thread_rng().gen_range::<f32>(0.0, 42.0);
         assert_eq!(get_max_days(&format!("{}", d)), d);
     }
 
@@ -245,8 +231,9 @@ mod test {
         cmd_cache(&[String::from("echo"), String::from(msg)], home, 0.0, &mut o);
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
         
+        use test::rand::{thread_rng, Rng, distributions::Alphanumeric};
         let mut o : Vec<u8> = Vec::new();
-        let v = format!("{}", rand_f32(-42.0, 42.0));
+        let v : String = thread_rng().sample_iter(&Alphanumeric).take(42).collect();
         cmd_cache(&[String::from("echo"), v.to_owned()], home, 0.0, &mut o);
         assert_eq!(v + "\n", String::from_utf8(o).unwrap());
     }
