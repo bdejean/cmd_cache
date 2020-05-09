@@ -32,7 +32,7 @@ use std::time::{Duration, SystemTime};
 
 use tempdir::TempDir;
 
-use chrono::{Utc, TimeZone};
+use chrono::{Local, Utc, TimeZone};
 
 use crypto::md5::Md5;
 use crypto::digest::Digest;
@@ -53,7 +53,7 @@ fn dirty_parse_system_time_str(t : &str) -> (u64, u64) {
 
 fn dirty_system_time_format(t : &SystemTime) -> String {
     let (sec, nsec) = dirty_parse_system_time(t);
-    return Utc.timestamp(sec as i64, nsec as u32).to_string();
+    return Utc.timestamp(sec as i64, nsec as u32).with_timezone(&Local).to_string();
 }
 
 
