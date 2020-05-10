@@ -32,7 +32,7 @@ use std::time::{Duration, SystemTime};
 
 use tempfile::NamedTempFile;
 
-use chrono::{Local, Utc, TimeZone};
+use chrono::{DateTime, Local};
 
 use crypto::md5::Md5;
 use crypto::digest::Digest;
@@ -41,19 +41,9 @@ use crypto::digest::Digest;
 const MAX_DAYS_DEFAULT : f32 = 7.0;
 
 
-fn dirty_parse_system_time(t : &SystemTime) -> (u64, u64) {
-    return dirty_parse_system_time_str(&format!("{:?}", t));
-}
-
-fn dirty_parse_system_time_str(t : &str) -> (u64, u64) {
-    let tokens = t.split(|c| c == ' ' || c == '\t' || c == ',');
-    let mut ts = tokens.filter_map(|x| x.parse::<u64>().ok());
-    return (ts.next().unwrap(), ts.next().unwrap());
-}
-
-fn dirty_system_time_format(t : &SystemTime) -> String {
-    let (sec, nsec) = dirty_parse_system_time(t);
-    return Utc.timestamp(sec as i64, nsec as u32).with_timezone(&Local).to_string();
+fn system_time_format(t : &SystemTime) -> String {
+    let dt : DateTime<Local> = t.to_owned().into();
+    return dt.format("%+").to_string();
 }
 
 
@@ -114,7 +104,7 @@ fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut dyn std:
 
     match check_file(max_days, &cmd_file) {
         Some(ts) => {
-                    eprint!("# using cached output from {}\n", dirty_system_time_format(&ts));
+                    eprint!("# using cached output from {}\n", system_time_format(&ts));
         }
         None => {
             eprint!("# Really running {:?}\n", args);
@@ -266,18 +256,4 @@ mod test {
         assert!(check_file(1.0, &file).is_some());
     }
 
-    #[test]
-    fn test_dirty_parse_system_time() {
-        let s_now = SystemTime::now();
-        let now = dirty_parse_system_time(&s_now);
-        assert!(now.0 > 1530818304);
-        assert_eq!(format!("{:?}", s_now), format!("SystemTime {{ tv_sec: {}, tv_nsec: {} }}", now.0, now.1));
-
-
-        let (x_0, x_1) = (1530549407, 795369636);
-        let x = dirty_parse_system_time_str(&format!("{{ tv_sec: {}, tv_nsec: {} }}", x_0, x_1));
-        assert_eq!(x.0, x_0);
-        assert_eq!(x.1, x_1);
-
-    }
 }
