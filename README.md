@@ -30,3 +30,5 @@ The cache directory may be cleaned with a simple:
 ```
 find ~/.cmd_cache/ -type f -mtime +90 -delete
 ```
+
+![Rust](https://github.com/bdejean/cmd_cache/workflows/Rust/badge.svg)
