@@ -1,6 +1,6 @@
 [package]
 name = "cmd_cache"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Benoît Dejean <bdejean@gmail.com>", "Cyprien Le Pannérer <cyplp@free.fr>"]
 license = "GPL-3.0"
 repository = "https://github.com/bdejean/cmd_cache"
