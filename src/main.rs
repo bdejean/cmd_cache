@@ -194,7 +194,7 @@ mod test {
         assert_eq!(get_max_days("foo"), MAX_DAYS_DEFAULT);
 
         use test::rand::{thread_rng, Rng};
-        let d = thread_rng().gen_range::<f32>(0.0, 42.0);
+        let d : f32 = thread_rng().gen_range(0.0, 42.0);
         assert_eq!(get_max_days(&format!("{}", d)), d);
     }
 
