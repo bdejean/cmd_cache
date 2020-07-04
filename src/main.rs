@@ -115,14 +115,12 @@ fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut dyn std:
 
             let cmd = &args[0];
 
-            let mut child = std::process::Command::new(cmd)
+            let child = std::process::Command::new(cmd)
                 .args(&args[1..args.len()])
                 .stdin(std::process::Stdio::null())
                 .stdout(stdout)
-                .spawn()
+                .status()
                 .expect(format!("failed to execute {:?}", args).as_ref());
-
-            child.wait().expect(format!("failed to wait {:?}", args).as_ref());
 
             // need to prepare the error message before because tmp.persist moves tmp
             let error_message = format!("failed to rename {:?} -> {:?}", &tmp.path(), &cmd_file);
