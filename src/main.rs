@@ -100,7 +100,8 @@ fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut dyn std:
 
     let dir = check_or_create_dir(home);
 
-    let cmd_file = dir.join(md5);
+    let mut cmd_file = dir.join(md5);
+    let mut do_rm = false;
 
     match check_file(max_days, &cmd_file) {
         Some(ts) => {
@@ -122,6 +123,11 @@ fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut dyn std:
                 .status()
                 .expect(format!("failed to execute {:?}", args).as_ref());
 
+            if !child.success() {
+                cmd_file.set_extension("failed");
+                do_rm = true;
+            }
+
             // need to prepare the error message before because tmp.persist moves tmp
             let error_message = format!("failed to rename {:?} -> {:?}", &tmp.path(), &cmd_file);
             tmp.persist(&cmd_file).expect(error_message.as_ref());
@@ -130,6 +136,10 @@ fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut dyn std:
 
     let mut stdin = std::fs::File::open(cmd_file).unwrap();
     io::copy(&mut stdin, output).expect("failed to display command output");
+
+    if do_rm {
+        // TODO: std::fs::remove_file(stdin);
+    }
 }
 
 fn main() {
