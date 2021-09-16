@@ -18,8 +18,6 @@
  * Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-
-
 extern crate chrono;
 extern crate crypto;
 extern crate tempfile;
@@ -27,46 +25,45 @@ extern crate tempfile;
 use std::env;
 use std::fs;
 use std::io;
-use std::path::{Path,PathBuf};
+use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
 use tempfile::NamedTempFile;
 
 use chrono::{DateTime, Local};
 
-use crypto::md5::Md5;
 use crypto::digest::Digest;
+use crypto::md5::Md5;
 
+const MAX_DAYS_DEFAULT: f32 = 7.0;
 
-const MAX_DAYS_DEFAULT : f32 = 7.0;
-
-
-fn system_time_format(t : &SystemTime) -> String {
-    let dt : DateTime<Local> = t.to_owned().into();
+fn system_time_format(t: &SystemTime) -> String {
+    let dt: DateTime<Local> = t.to_owned().into();
     return dt.format("%+").to_string();
 }
 
-
-fn concat_args(args : &[String]) -> String {
-//    args.remove(0);
+fn concat_args(args: &[String]) -> String {
+    //    args.remove(0);
     let joined = args.join("@@join@@");
     return joined;
 }
 
-fn hash(s : &str) -> String {
+fn hash(s: &str) -> String {
     let mut h = Md5::new();
     h.input_str(s);
     return h.result_str();
 }
 
-
-fn get_max_days(s: &str) -> f32  {
+fn get_max_days(s: &str) -> f32 {
     match s.parse::<f32>() {
-        Ok(val) if val >= 0.0 => {return val;},
-        _ => {return MAX_DAYS_DEFAULT;},
+        Ok(val) if val >= 0.0 => {
+            return val;
+        }
+        _ => {
+            return MAX_DAYS_DEFAULT;
+        }
     }
 }
-
 
 fn check_or_create_dir(home: &str) -> PathBuf {
     let dir = Path::new(&home).join(".cmd_cache");
@@ -81,8 +78,10 @@ fn check_or_create_dir(home: &str) -> PathBuf {
 fn check_file(max_days: f32, file: &PathBuf) -> Option<SystemTime> {
     let ok = file.is_file();
 
-    if ! ok { return None; }
-    
+    if !ok {
+        return None;
+    }
+
     let metadata = fs::metadata(file).unwrap();
     let file_time = metadata.modified().unwrap();
     let duration = Duration::from_secs((max_days * 24.0 * 3600.0) as u64);
@@ -93,7 +92,7 @@ fn check_file(max_days: f32, file: &PathBuf) -> Option<SystemTime> {
     }
 }
 
-fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut dyn std::io::Write) {
+fn cmd_cache(args: &[String], home: &str, max_days: f32, output: &mut dyn std::io::Write) {
     let joined = concat_args(&args);
 
     let md5 = hash(&joined);
@@ -105,7 +104,7 @@ fn cmd_cache(args : &[String], home: &str, max_days: f32, output : &mut dyn std:
 
     match check_file(max_days, &cmd_file) {
         Some(ts) => {
-                    eprint!("# using cached output from {}\n", system_time_format(&ts));
+            eprint!("# using cached output from {}\n", system_time_format(&ts));
         }
         None => {
             eprint!("# Really running {:?}\n", args);
@@ -146,10 +145,9 @@ fn main() {
     let env_max_days = env::var("CMD_CACHE_MAX_DAYS").unwrap_or_default();
     let max_days = get_max_days(&env_max_days);
     let home = env::var("HOME").expect("HOME not set!");
-    let args : Vec<String> = std::env::args().skip(1).collect();
+    let args: Vec<String> = std::env::args().skip(1).collect();
     cmd_cache(&args, &home, max_days, &mut io::stdout());
 }
-
 
 #[cfg(test)]
 mod test {
@@ -157,23 +155,27 @@ mod test {
     extern crate rand;
 
     use tempfile::tempdir;
-    use ::*;
+    use *;
 
-    fn clean_env(key : &str) -> Option <String>{
+    fn clean_env(key: &str) -> Option<String> {
         match env::var(key) {
-            Ok(value) => {env::remove_var(key);
-                      return Some(value);},
-            _ => None
+            Ok(value) => {
+                env::remove_var(key);
+                return Some(value);
+            }
+            _ => None,
         }
     }
 
-    fn restore_env(key : &str, value :Option <String>) {
+    fn restore_env(key: &str, value: Option<String>) {
         match value {
-            Some(val) => { env::set_var(key, val);},
-            None => { }
+            Some(val) => {
+                env::set_var(key, val);
+            }
+            None => {}
         }
     }
-                
+
     #[test]
     fn test_concat_args() {
         let args = [String::from("foo")];
@@ -188,7 +190,6 @@ mod test {
         assert_eq!(hash(&s), "acbd18db4cc2f85cedef654fccc4a4d8");
     }
 
-
     #[test]
     fn test_get_max_days() {
         assert_eq!(get_max_days(""), MAX_DAYS_DEFAULT);
@@ -202,50 +203,63 @@ mod test {
         assert_eq!(get_max_days("foo"), MAX_DAYS_DEFAULT);
 
         use test::rand::{thread_rng, Rng};
-        let d : f32 = thread_rng().gen_range(0.0, 42.0);
+        let d: f32 = thread_rng().gen_range(0.0, 42.0);
         assert_eq!(get_max_days(&format!("{}", d)), d);
     }
 
     #[test]
     fn test_cmd_cache() {
-
         let tmp = tempdir().unwrap();
         let home = tmp.path().to_str().unwrap();
-        
+
         let msg = "hello world";
 
         // never executed before
-        let mut o : Vec<u8> = Vec::new();
-        cmd_cache(&[String::from("echo"), String::from(msg)], home, 1.0, &mut o);
+        let mut o: Vec<u8> = Vec::new();
+        cmd_cache(
+            &[String::from("echo"), String::from(msg)],
+            home,
+            1.0,
+            &mut o,
+        );
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
 
         // hits cache
-        let mut o : Vec<u8> = Vec::new();
-        cmd_cache(&[String::from("echo"), String::from(msg)], home, 1.0, &mut o);
+        let mut o: Vec<u8> = Vec::new();
+        cmd_cache(
+            &[String::from("echo"), String::from(msg)],
+            home,
+            1.0,
+            &mut o,
+        );
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
 
         // cache too old
-        let mut o : Vec<u8> = Vec::new();
-        cmd_cache(&[String::from("echo"), String::from(msg)], home, 0.0, &mut o);
+        let mut o: Vec<u8> = Vec::new();
+        cmd_cache(
+            &[String::from("echo"), String::from(msg)],
+            home,
+            0.0,
+            &mut o,
+        );
         assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
-        
+
         // with a random string, multiple invocations
-        use test::rand::{thread_rng, Rng, distributions::Alphanumeric};
-        let msg : String = thread_rng().sample_iter(&Alphanumeric).take(42).collect();
+        use test::rand::{distributions::Alphanumeric, thread_rng, Rng};
+        let msg: String = thread_rng().sample_iter(&Alphanumeric).take(42).collect();
         for _ in 0..10 {
-            let mut o : Vec<u8> = Vec::new();
+            let mut o: Vec<u8> = Vec::new();
             cmd_cache(&[String::from("echo"), msg.to_owned()], home, 1.0, &mut o);
             assert_eq!(msg.to_owned() + "\n", String::from_utf8(o).unwrap());
         }
     }
-
 
     #[test]
     fn test_check_or_create_dir() {
         let tmp = tempdir().unwrap();
         let home = tmp.path().to_str().unwrap();
 
-        let result = tmp.path().join(".cmd_cache"); 
+        let result = tmp.path().join(".cmd_cache");
         // .cmd_cache doesn't exists at this point.
         assert_eq!(check_or_create_dir(home), result);
 
@@ -258,10 +272,9 @@ mod test {
         let tmp = tempdir().unwrap();
         let file = tmp.path().join("fake");
         let _fileh = std::fs::File::create(&file).unwrap();
-        
+
         assert!(check_file(0.0, &file).is_none());
 
         assert!(check_file(1.0, &file).is_some());
     }
-
 }
